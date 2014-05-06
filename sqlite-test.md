@@ -126,7 +126,9 @@ TCL 與 TH3 在每次進行測試時會自動追蹤系統資源並回報資源�
 
 分支涵蓋度就嚴苛多了，他會量測機器碼中的分支指令，其兩條支線是否至少被執行過一次。考慮以下 C 程式碼：
 
+```
     if( a>b && c!=25 ){ d++; }
+```
 
 這樣的一行可能會產生一打機器語言。〈譯：以分支涵蓋度來看〉如果其中的任一個指令都被運算過，我們才能說這個語句被測試過。那麼舉例來說，可能這個條件句總是為假，而 d 變數從未被遞增。這時，語句涵蓋度仍會將這一行程式碼列入已測試的計算。
 
@@ -144,18 +146,24 @@ TCL 與 TH3 在每次進行測試時會自動追蹤系統資源並回報資源�
 
 在 SQLite ，這個答案是否定的。為了測試需求，SQLite 定義了 ALWAYS() 與 NEVER 兩個巨集。ALWAYS() 巨集包裹預期為真的條件而 NEVER() 則相反。這兩個巨集可視為防衛性測試的註解。以標準建置的環境來說，這些巨集是被略過的：
 
+```
     #define ALWAYS(X) (X)
     #define NEVER(X) (X)
+```
 
 不過在大多數測試，如果參數與預期結果不同，這兩個巨集會丟出一個斷言失敗。這會快速地警告開發者使用了不正確的設計假設。
 
+```
     #define ALWAYS(X) ((X)?1:assert(0),))
     #define NEVER(X) ((X)?assert(0), 1:0)
+```
 
 當量測涵蓋度時，這兩個巨集會被定義為常數，因此不會產生分支指令，也就不會影響分支涵蓋度的計算。
 
+```
     #define ALWAYS(X) (1)
     #define NEVER(X) (0)
+```
 
 此測試套件被設計為執行三次，每次使用一種上面列出的巨集定義。三次執行都應該產出完全一樣的結果。執行期可透過 [sqlite3\_test\_control](http://www.sqlite.org/c3ref/test_control.html)([SQLITE_TESTCTRL\_ALWAYS](http://www.sqlite.org/c3ref/c_testctrl_always.html), ...) 介面來驗證巨集被正確設定為佈署用的設定(略過斷言)。
 
@@ -165,12 +173,15 @@ TCL 與 TH3 在每次進行測試時會自動追蹤系統資源並回報資源�
 
 不過在涵蓋度量測模式時，此巨集會運算它的參數。然後在分析階段檢查對真假兩種狀態都有進行測試。舉例來說 testcase()  會被用來驗證邊界值已被測試：
 
+```
     testcase( a == b );
     testcase( a == b+1);
     if( a>b && c!=25 ){ d++; }
+```
 
 該巨集也會被用在有多個條件落入相同區段的 switch 語句，來確認所有條件都有被(測試)執行過：
 
+```
     switch( op ){
     case OP_Add:
     case OP_Subtract: {
@@ -179,12 +190,15 @@ TCL 與 TH3 在每次進行測試時會自動追蹤系統資源並回報資源�
             break;
         }
     }
+```
 
 對位元遮罩的測試，testcase() 巨集可驗證所有遮罩中的位元都有影響到測試。例如下面的程式碼，若遮罩中 MAIN\_DB 或 TEMP\_DB 任一位元被打開，則條件為真，前置的 testcase() 巨集會驗證兩種狀況都被測試過：
 
+```
     testcase( mask & SQLITE_OPEN_MAIN_DB );
     testcase( mask & SQLITE_OPTN_TEMP_DB);
     if( (mask & (SQLITE_OPEN_MAIN_DB | SQLITE_OPEN_TEMP_DB)) !=0 ) { ... }
+```
 
 SQLite 的原始碼中使用了 667 個 testcase() 巨集。
 
